@@ -405,8 +405,24 @@ function! s:Trigger(bufnr, timer) abort
   return copilot#Suggest()
 endfunction
 
+lua << EOF
+function copilot_vim_is_on_comment()
+    local current_line = vim.fn.getline('.')
+    local filetype = vim.bo.filetype
+
+    if filetype == "lua" then
+        return current_line:match("^%s*%-%-") ~= nil
+    elseif filetype == "cs" then
+        return current_line:match("^%s*//") ~= nil
+    end
+    -- TODO add more filetypes
+
+    return false
+end
+EOF
+
 function! copilot#Schedule() abort
-  if !s:has_ghost_text || !s:Running() || !copilot#Enabled()
+  if !s:has_ghost_text || !s:Running() || !copilot#Enabled() || v:lua.copilot_vim_is_on_comment()
     call copilot#Clear()
     return
   endif
