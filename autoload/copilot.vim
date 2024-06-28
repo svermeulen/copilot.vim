@@ -406,6 +406,15 @@ function! s:Trigger(bufnr, timer) abort
 endfunction
 
 function! copilot#Schedule() abort
+  " Only fire if not in a comment. Have to step back one column -- see note at
+  " :help synID().
+  " Caveat 1: Copilot will still fire if the cursor is on a blank line. -_-
+  " Caveat 2: "[synID] can be very slow."
+  let synName = synIDattr(synIDtrans(synID(line("."),max([1,col(".")-1]),1)),"name")
+  if synName ==# "Comment"
+    call copilot#Clear()
+    return
+  endif
   if !s:has_ghost_text || !s:Running() || !copilot#Enabled()
     call copilot#Clear()
     return
