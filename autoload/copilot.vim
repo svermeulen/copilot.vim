@@ -405,13 +405,45 @@ function! s:Trigger(bufnr, timer) abort
   return copilot#Suggest()
 endfunction
 
+function! s:isCommentTreeSitter()
+    let [row, col] = getpos('.')[1:2]
+    let captures = v:lua.vim.treesitter.get_captures_at_pos(0, row - 1, col - 1)
+    for capture in captures
+        if capture.capture =~? 'comment\|docstring'
+            return 1
+        endif
+    endfor
+    return 0
+endfunction
+
+function! isOnComment()
+    if exists('*nvim_treesitter#highlighter#active') && nvim_treesitter#highlighter#active()
+        " TreeSitter is active
+        return s:isCommentTreeSitter()
+    else
+        " Fallback to Vim's syntax highlighting
+        let synName = synIDattr(synIDtrans(synID(line("."), col("."), 1)), "name")
+        return synName =~? 'comment\|docstring'
+    endif
+endfunction
+
 function! copilot#Schedule() abort
-  " Only fire if not in a comment. Have to step back one column -- see note at
-  " :help synID().
-  " Caveat 1: Copilot will still fire if the cursor is on a blank line. -_-
-  " Caveat 2: "[synID] can be very slow."
-  let synName = synIDattr(synIDtrans(synID(line("."),max([1,col(".")-1]),1)),"name")
-  if synName ==# "Comment"
+  if isOnComment()
+    call copilot#Clear()
+    return
+  endif
+  if !s:has_ghost_text || !s:Running() || !copilot#Enabled()
+    call copilot#Clear()
+    return
+  endif
+  call s:UpdatePreview()
+  let delay = get(g:, 'copilot_idle_delay', 45)
+  call timer_stop(get(g:, '_copilot_timer', -1))
+  let g:_copilot_timer = timer_start(delay, function('s:Trigger', [bufnr('')]))
+endfunction
+
+function! copilot#Schedule() abort
+  if isOnComment()
     call copilot#Clear()
     return
   endif
