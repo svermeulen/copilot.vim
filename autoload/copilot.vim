@@ -410,9 +410,9 @@ function copilot_vim_is_on_comment()
     local current_line = vim.fn.getline('.')
     local filetype = vim.bo.filetype
 
-    if filetype == "lua" then
+    if filetype == "lua" or filetype == "teal" then
         return current_line:match("^%s*%-%-") ~= nil
-    elseif filetype == "cs" then
+    elseif filetype == "cs" or filetype == "groovy" then
         return current_line:match("^%s*//") ~= nil
     end
     -- TODO add more filetypes
