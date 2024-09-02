@@ -414,6 +414,8 @@ function copilot_vim_is_on_comment()
         return current_line:match("^%s*%-%-") ~= nil
     elseif filetype == "cs" or filetype == "groovy" then
         return current_line:match("^%s*//") ~= nil
+    elseif filetype == "python" then
+        return current_line:match("^%s*#") ~= nil
     end
     -- TODO add more filetypes
 
